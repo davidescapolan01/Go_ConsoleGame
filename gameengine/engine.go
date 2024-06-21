@@ -2,10 +2,12 @@ package gameengine
 
 import (
 	"fmt"
+	"strings"
 	"time"
 
 	"asciigame/goGame/gameentity"
 	"asciigame/goGame/gamefield"
+	"asciigame/goGame/utils"
 )
 
 type Engine struct {
@@ -59,16 +61,20 @@ func (
 	e.renderField(false)
 	exit := false
 
+	go utils.ReadUserInput(10 * time.Millisecond)
+
 	for !exit {
 		if time.Now().After(e.nextFrameTime) {
 			e.nextFrameTime = e.nextFrameTime.Add(e.frameTime)
 
+			//checkKilledEnemy
 			for i := len(e.Enemies) - 1; i >= 0; i-- {
 				if e.Enemies[i].IsDead() {
-					e.Enemies = e.Enemies[:len(e.Enemies)-1]
+					e.Enemies = append(e.Enemies[:i], e.Enemies[i+1:]...)
 				}
 			}
 
+			//checkEnemyWin
 			for i := len(e.Enemies) - 1; i >= 0; i-- {
 				if e.Enemies[i].MoveForeward(1, e.field.Height) {
 					e.Enemies[i].Kill()
@@ -79,8 +85,62 @@ func (
 			e.checkPlayersKill()
 
 			//readUserInput
+			inputRead := false
+			var inputs []string
+			for !inputRead {
+				if gameentity.InputMutex.TryLock() {
+					inputRead = true
+
+					if len(gameentity.Inputs) > 0 {
+						inputs = gameentity.Inputs
+						gameentity.Inputs = make([]string, 0)
+					}
+
+					gameentity.InputMutex.Unlock()
+				}
+				time.Sleep(1 * time.Millisecond)
+			}
+
+			//parseInput
+			var movement [4]int
+			for _, input := range inputs {
+				switch strings.ToLower(input) {
+				case "h": //left
+					movement[0] += 1
+				case "j": //down
+					movement[1] += 1
+				case "k": //up
+					movement[2] += 1
+				case "l": //right
+					movement[3] += 1
+				}
+			}
+
+			//checkMostUsedMovement
+			mostUsed := 0
+			anyMovement := false
+			for i := 0; i < len(movement); i++ {
+				anyMovement = anyMovement || movement[i] > 0
+				if mostUsed != i && movement[i] > movement[mostUsed] {
+					mostUsed = i
+				}
+			}
+
 			//movePlayer
-			//che3ckPlayersKill
+			if anyMovement {
+				switch mostUsed {
+				case 0: //left
+					e.Player.MoveLeft(-1, e.field.Width)
+				case 1:
+					e.Player.MoveForeward(1, e.field.Height)
+				case 2:
+					e.Player.MoveForeward(-1, e.field.Height)
+				case 3:
+					e.Player.MoveLeft(1, e.field.Width)
+				}
+			}
+
+			e.checkPlayersKill()
 
 			exit = e.Player.IsDead()
 			e.renderField(exit)
@@ -88,7 +148,9 @@ func (
 	}
 }
 
-func (e *Engine) checkPlayersKill() {
+func (
+	e *Engine,
+) checkPlayersKill() {
 	xPlayer, yPlayer := e.Player.GetPosition()
 
 	for i, enemy := range e.Enemies {
@@ -100,7 +162,11 @@ func (e *Engine) checkPlayersKill() {
 	}
 }
 
-func (e *Engine) renderField(exit bool) {
+func (
+	e *Engine,
+) renderField(
+	exit bool,
+) {
 	var arrayEnemyReference []*gameentity.Entity
 
 	for _, v := range e.Enemies {
@@ -109,5 +175,7 @@ func (e *Engine) renderField(exit bool) {
 
 	e.field.UpdateField(append(arrayEnemyReference, &e.Player))
 	e.field.GeneratePrintableField(exit)
-	fmt.Printf(e.field.PrintableField)
+	gameentity.Kill = exit
+	utils.CallClear()
+	fmt.Print(e.field.PrintableField)
 }

@@ -12,7 +12,7 @@ func main() {
 
 	f := gamefield.Init(31, 31)
 
-	frameTime := time.Duration(200 * 1000000)
+	frameTime := time.Duration(300 * time.Millisecond)
 
 	engine.InitEngine(frameTime, 2, 0, 3, f)
 

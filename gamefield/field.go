@@ -54,16 +54,16 @@ func (f *Field) UpdateField(
 func (f *Field) gameOver() string {
 	var gameOverLine string
 
-	gameOverString := "G A M E   O V E R"
-	for i := 0; i < (f.Width-len(gameOverString))/2; i++ {
-		gameOverLine += " "
+	gameOverString := " G A M E   O V E R "
+	for i := 0; i < (f.Width-len(gameOverString)/3)/2; i++ {
+		gameOverLine += "   "
 	}
 
-	gameOverLine += gameOverString
+	gameOverLine += " " + gameOverString + " "
 
-	for i := 0; i < (f.Width-len(gameOverString))/2; i++ {
+	for i := 0; i < (f.Width-len(gameOverString)/3)/2; i++ {
 
-		gameOverLine += " "
+		gameOverLine += "   "
 	}
 
 	return gameOverLine
@@ -77,7 +77,7 @@ func (f *Field) GeneratePrintableField(gameOver bool) {
 
 		if i == 0 {
 			for j := 0; j < len(f.FieldArray[i]); j++ {
-				f.PrintableField += "*"
+				f.PrintableField += " * "
 			}
 
 			f.PrintableField += "*"
@@ -90,9 +90,9 @@ func (f *Field) GeneratePrintableField(gameOver bool) {
 		} else {
 			for j := 0; j < len(f.FieldArray[i]); j++ {
 				if f.FieldArray[i][j] == nil {
-					f.PrintableField += " "
+					f.PrintableField += "   "
 				} else {
-					f.PrintableField += f.FieldArray[i][j].Icon
+					f.PrintableField += " " + f.FieldArray[i][j].Icon + " "
 				}
 			}
 
@@ -104,7 +104,7 @@ func (f *Field) GeneratePrintableField(gameOver bool) {
 			f.PrintableField += "*"
 
 			for j := 0; j < len(f.FieldArray[i]); j++ {
-				f.PrintableField += "*"
+				f.PrintableField += " * "
 			}
 
 		}
